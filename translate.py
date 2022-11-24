@@ -41,6 +41,8 @@ def load_doc(filename):
     return text
 
 def filterPair(p):
+    # print (p[0])
+    # print (p[1])
     return len(p[0].split(' ')) < MAX_LENGTH and len(p[1].split(' ')) < MAX_LENGTH
 
 
