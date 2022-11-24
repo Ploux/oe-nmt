@@ -30,3 +30,54 @@ from keras.preprocessing.text import Tokenizer
 from keras.utils import pad_sequences
 from nltk.translate.bleu_score import corpus_bleu
 
+# clean data
+
+MAX_LENGTH = 20
+
+def load_doc(filename):
+    file = open(filename, mode='rt', encoding='utf-8')
+    text = file.read()
+    file.close()
+    return text
+
+def filterPair(p):
+    return len(p[0].split(' ')) < MAX_LENGTH and len(p[1].split(' ')) < MAX_LENGTH
+
+
+def to_pairs(doc):
+  lines=doc.strip().split('\n')
+  pairs=[line.split('\t') for line in lines]
+  pairs = [pair for pair in pairs if filterPair(pair)]
+  pairs = [list(reversed((p))) for p in pairs]
+  return pairs
+
+def clean_pairs(lines):
+    cleaned = list()
+    re_print = re.compile('[^%s]' % re.escape(string.printable))
+    table = str.maketrans('', '', string.punctuation)
+    for pair in lines:
+        clean_pair = list()
+        for line in pair:
+            line = line.split()
+            line = [word.lower() for word in line]
+            line = [word.translate(table) for word in line]
+            line = [word for word in line if word.isalpha()]
+            clean_pair.append(' '.join(line))
+        cleaned.append(clean_pair)
+    return array(cleaned)
+
+def load_clean_sentences(filename):
+    return load(open(filename, 'rb'))
+
+def save_clean_data(sentences, filename):
+    dump(sentences, open(filename, 'wb'))
+    print('Saved: %s' % filename)
+
+filename = 'corpus.tsv'
+doc = load_doc(filename)
+# print(doc)
+pairs = to_pairs(doc)
+clean_pairs = clean_pairs(pairs)
+save_clean_data(clean_pairs, 'me-oe.pkl')
+for i in range(20):
+    print('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))
