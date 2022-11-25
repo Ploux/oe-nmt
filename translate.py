@@ -32,7 +32,7 @@ from nltk.translate.bleu_score import corpus_bleu
 
 # clean data
 
-MAX_LENGTH = 20
+MAX_LENGTH = 20 # max num of words in eng and oe sentences
 
 def load_doc(filename):
     file = open(filename, mode='rt', encoding='utf-8')
@@ -81,5 +81,23 @@ doc = load_doc(filename)
 pairs = to_pairs(doc)
 clean_pairs = clean_pairs(pairs)
 save_clean_data(clean_pairs, 'me-oe.pkl')
+
+# print out 20 sentence pairs
 for i in range(20):
     print('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))
+    
+# train on 90%, test on 10%
+
+dataset = load_clean_sentences('me-oe.pkl')
+shuffle(dataset)
+pairs_length = len(pairs)
+ninety_percent = int(len(pairs)*.9)
+ten_percent = pairs_length-ninety_percent
+
+print(ninety_percent)
+print(ten_percent)
+
+train, test = dataset[:336], dataset[336:]
+save_clean_data(dataset, 'me-oe-both.pkl')
+save_clean_data(train, 'me-oe-train.pkl')
+save_clean_data(test, 'me-oe-test.pkl')    
