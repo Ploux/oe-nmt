@@ -165,4 +165,27 @@ trainY = encode_output(trainY, eng_vocab_size)
 
 testX = encode_sequences(oe_tokenizer, oe_length, test[:, 1])
 testY = encode_sequences(eng_tokenizer, eng_length, test[:, 0])
-testY = encode_output(testY, eng_vocab_size)    
+testY = encode_output(testY, eng_vocab_size)
+
+# training
+
+model = define_model(oe_vocab_size, eng_vocab_size, oe_length, eng_length, 256)
+model.compile(optimizer='Adam', loss='categorical_crossentropy')
+print(model.summary())
+plot_model(model, to_file='model.png', show_shapes=True)
+
+model_filename = 'model.h5'
+checkpoint = ModelCheckpoint(model_filename, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+initial_learning_rate = 0.1
+epochs = 100
+decay = initial_learning_rate / epochs
+def lr_time_based_decay(epoch, lr):
+    return lr * 1 / (1 + decay * epoch)
+history_time_based_decay = model.fit(
+    trainX, 
+    trainY, 
+    epochs=200, 
+    validation_data=(testX, testY),
+    batch_size=64,
+    callbacks=[LearningRateScheduler(lr_time_based_decay, verbose=1), checkpoint],
+)    
