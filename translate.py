@@ -188,4 +188,59 @@ history_time_based_decay = model.fit(
     validation_data=(testX, testY),
     batch_size=64,
     callbacks=[LearningRateScheduler(lr_time_based_decay, verbose=1), checkpoint],
-)    
+)
+
+# evaluation
+
+def word_for_id(integer, tokenizer):
+    for word, index in tokenizer.word_index.items():
+        if index == integer:
+            return word
+    return None
+
+def predict_sequence(model, tokenizer, source):
+    prediction = model.predict(source, verbose=0)[0]
+    integers = [argmax(vector) for vector in prediction]
+    target = list()
+    for i in integers:
+        word = word_for_id(i, tokenizer)
+        if word is None:
+            break
+        target.append(word)
+    return ' '.join(target)
+
+def evaluate_model(model, tokenizer, sources, raw_dataset):
+    actual, predicted = list(), list()
+    for i, source in enumerate(sources):
+        source = source.reshape((1, source.shape[0]))
+        translation = predict_sequence(model, eng_tokenizer, source)
+        raw_target, raw_src = raw_dataset[i]
+        if i < 40:
+            print('src=[%s], target=[%s], predicted=[%s]' % (raw_src, raw_target, translation))
+        actual.append([raw_target.split()])
+        predicted.append(translation.split())
+    print('BLEU-1: %f' % corpus_bleu(actual, predicted, weights=(1.0, 0, 0, 0)))
+
+dataset = load_clean_sentences('me-oe-both.pkl')
+train = load_clean_sentences('me-oe-train.pkl')
+test = load_clean_sentences('me-oe-test.pkl')
+
+eng_tokenizer = create_tokenizer(dataset[:, 0])
+eng_vocab_size = len(eng_tokenizer.word_index) + 1
+eng_length = max_length(dataset[:, 0])
+
+oe_tokenizer = create_tokenizer(dataset[:, 1])
+oe_vocab_size = len(oe_tokenizer.word_index) + 1
+oe_length = max_length(dataset[:, 1])
+
+trainX = encode_sequences(oe_tokenizer, oe_length, train[:, 1])
+testX = encode_sequences(oe_tokenizer, oe_length, test[:, 1])
+
+
+model = load_model('model.h5')
+
+print('train')
+evaluate_model(model, eng_tokenizer, trainX, train)
+
+print('test')
+evaluate_model(model, eng_tokenizer, testX, test)    
