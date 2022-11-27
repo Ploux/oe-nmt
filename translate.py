@@ -100,4 +100,69 @@ print(ten_percent)
 train, test = dataset[:336], dataset[336:]
 save_clean_data(dataset, 'me-oe-both.pkl')
 save_clean_data(train, 'me-oe-train.pkl')
-save_clean_data(test, 'me-oe-test.pkl')    
+save_clean_data(test, 'me-oe-test.pkl')
+
+# tokenize - break down into indivdual words
+
+def create_tokenizer(lines):
+    tokenizer = Tokenizer()
+    tokenizer.fit_on_texts(lines)
+    return tokenizer
+
+def max_length(lines):
+    return max(len(line.split()) for line in lines)
+
+# encoder 
+# Eng (source) integer-encoded
+# OE (target) one-hot encoded
+
+def encode_sequences(tokenizer, length, lines):
+    X = tokenizer.texts_to_sequences(lines)
+    X = pad_sequences(X, maxlen=length, padding='post')
+    return X
+
+def encode_output(sequences, vocab_size):
+    ylist = list()
+    for sequence in sequences:
+        encoded = to_categorical(sequence, num_classes=vocab_size)
+        ylist.append(encoded)
+    y = array(ylist)
+    y = y.reshape(sequences.shape[0], sequences.shape[1], vocab_size)
+    return y
+
+# model
+
+def define_model(src_vocab, tar_vocab, src_timesteps, tar_timesteps, n_units):
+    model = Sequential()
+    model.add(Embedding(src_vocab, n_units, input_length=src_timesteps, mask_zero=True))
+    model.add(LSTM(n_units))
+    model.add(RepeatVector(tar_timesteps))
+    model.add(LSTM(n_units, return_sequences=True))
+    model.add(TimeDistributed(Dense(tar_vocab, activation='softmax')))
+    return model
+
+dataset = load_clean_sentences('me-oe-both.pkl')
+train = load_clean_sentences('me-oe-train.pkl')
+test = load_clean_sentences('me-oe-test.pkl')
+
+eng_tokenizer = create_tokenizer(dataset[:, 0])
+eng_vocab_size = len(eng_tokenizer.word_index) + 1
+eng_length = max_length(dataset[:, 0])
+print('English Vocabulary Size: %d' % eng_vocab_size)
+print('English Max Length: %d' % (eng_length))
+
+oe_tokenizer = create_tokenizer(dataset[:, 1])
+oe_vocab_size = len(oe_tokenizer.word_index) + 1
+oe_length = max_length(dataset[:, 1])
+print('Old English Vocabulary Size: %d' % oe_vocab_size)
+print('Old English Max Length: %d' % (oe_length))
+
+# encoding
+
+trainX = encode_sequences(oe_tokenizer, oe_length, train[:, 1])
+trainY = encode_sequences(eng_tokenizer, eng_length, train[:, 0])
+trainY = encode_output(trainY, eng_vocab_size)
+
+testX = encode_sequences(oe_tokenizer, oe_length, test[:, 1])
+testY = encode_sequences(eng_tokenizer, eng_length, test[:, 0])
+testY = encode_output(testY, eng_vocab_size)    
