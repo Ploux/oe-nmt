@@ -20,12 +20,69 @@ from numpy.random import shuffle
 import matplotlib.pyplot as plt
 from pickle import load, dump, HIGHEST_PROTOCOL
 from time import time
+import re
+import string
+import pandas as pd
+from unicodedata import normalize
 
-! wget https://github.com/Ploux/oe-nmt/raw/main/english-german-both.pkl
+# download the corpus
 
+!wget https://github.com/ploux/oe-nmt/raw/main/corpus.tsv
 
+# clean data
+
+MAX_LENGTH = 20 # max num of words in eng and oe sentences
+
+def load_doc(filename):
+    file = open(filename, mode='rt', encoding='utf-8')
+    text = file.read()
+    file.close()
+    return text
+
+def filterPair(p):
+    return len(p[0].split(' ')) < MAX_LENGTH and len(p[1].split(' ')) < MAX_LENGTH
+
+def to_pairs(doc):
+  lines=doc.strip().split('\n')
+  pairs=[line.split('\t') for line in lines]
+  pairs = [pair for pair in pairs if filterPair(pair)]
+  pairs = [list(reversed((p))) for p in pairs]
+  return pairs
+
+def clean_pairs(lines):
+    cleaned = list()
+    re_print = re.compile('[^%s]' % re.escape(string.printable))
+    table = str.maketrans('', '', string.punctuation)
+    for pair in lines:
+        clean_pair = list()
+        for line in pair:
+            line = line.split()
+            line = [word.lower() for word in line]
+            line = [word.translate(table) for word in line]
+            line = [word for word in line if word.isalpha()]
+            clean_pair.append(' '.join(line))
+        cleaned.append(clean_pair)
+    return array(cleaned)
+
+def load_clean_sentences(filename):
+    return load(open(filename, 'rb'))
+
+def save_clean_data(sentences, filename):
+    dump(sentences, open(filename, 'wb'))
+    print('Saved: %s' % filename)
+
+filename = 'corpus.tsv'
+doc = load_doc(filename)
+pairs = to_pairs(doc)
+clean_pairs = clean_pairs(pairs)
+save_clean_data(clean_pairs, 'oe-eng.pkl')
+
+# print out 20 sentence pairs
+for i in range(20):
+    print('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))
+  
+    
 # Positional Embedding Layer
-
 class PositionEmbeddingFixedWeights(Layer):
   def __init__(self, seq_length, vocab_size, output_dim, **kwargs):
     super().__init__(**kwargs)
@@ -416,7 +473,7 @@ d_ff = 2048  # Dimensionality of the inner fully connected layer
 n = 6  # Number of layers in the encoder stack
 
 # Define the training parameters
-epochs = 2
+epochs = 100
 batch_size = 64
 beta_1 = 0.9
 beta_2 = 0.98
@@ -432,8 +489,7 @@ class LRScheduler(LearningRateSchedule):
         self.warmup_steps = warmup_steps
 
     def __call__(self, step_num):
-        # Linearly increasing the learning rate for the first warmup_steps, and
-        # decreasing it thereafter
+        # Linearly increasing the learning rate for the first warmup_steps, and decreasing it thereafter
         arg1 = step_num ** -0.5
         arg2 = step_num * (self.warmup_steps ** -1.5)
 
@@ -445,7 +501,7 @@ optimizer = Adam(LRScheduler(d_model), beta_1, beta_2, epsilon)
 # Prepare the training and test splits of the dataset
 dataset = PrepareDataset()
 trainX, trainY, train_orig, enc_seq_length, dec_seq_length, \
-    enc_vocab_size, dec_vocab_size = dataset('english-german-both.pkl')
+    enc_vocab_size, dec_vocab_size = dataset('oe-eng.pkl')
 
 # Prepare the dataset batches
 train_dataset = data.Dataset.from_tensor_slices((trainX, trainY))
@@ -458,8 +514,7 @@ training_model = TransformerModel(enc_vocab_size, dec_vocab_size, enc_seq_length
 
 # Defining the loss function
 def loss_fcn(target, prediction):
-    # Create mask so that the zero padding values are not included in the
-    # computation of loss
+    # Create mask so that the zero padding values are not included in the computation of loss
     mask = math.logical_not(equal(target, 0))
     mask = cast(mask, float32)
 
@@ -471,8 +526,7 @@ def loss_fcn(target, prediction):
 
 # Defining the accuracy function
 def accuracy_fcn(target, prediction):
-    # Create mask so that the zero padding values are not included in the
-    # computation of accuracy
+    # Create mask so that the zero padding values are not included in the computation of accuracy
     mask = math.logical_not(equal(target, 0))
 
     # Find equal prediction and target values, and apply the padding mask
@@ -522,9 +576,7 @@ for epoch in range(epochs):
     train_accuracy.reset_states()
 
     print("\nStart of epoch %d" % (epoch + 1))
-
-    
-
+ 
     # Iterate over the dataset batches
     for step, (train_batchX, train_batchY) in enumerate(train_dataset):
         # Define the encoder and decoder inputs, and the decoder output
