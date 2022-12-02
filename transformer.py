@@ -177,11 +177,12 @@ class MultiHeadAttention(Layer):
     # Resulting tensor shape: (batch_size, input_seq_length, d_v)
     
     # Apply one final linear projection to the output to generate the multi-head attention.
-    # Resulting tensor shape: (batch_size, input_seq_length, d_model)
     return self.W_o(output)
+    # Resulting tensor shape: (batch_size, input_seq_length, d_model)
 
 
 # Encoder
+
 
 ## Add & Norm Layer
 class AddNormalization(Layer):
@@ -196,6 +197,7 @@ class AddNormalization(Layer):
     # Apply layer normalization to the sum
     return self.layer_norm(add)
 
+
 ## Feed-Forward Layer
 class FeedForward(Layer):
   def __init__(self, d_ff, d_model, **kwargs):
@@ -209,6 +211,7 @@ class FeedForward(Layer):
     x_fc1 = self.fully_connected1(x)
 
     return self.fully_connected2(self.activation(x_fc1))
+
 
 ## Encoder Layer
 class EncoderLayer(Layer):
@@ -250,6 +253,7 @@ class EncoderLayer(Layer):
     # Followed by another Add & Norm layer
     return self.add_norm2(addnorm_output, feedforward_output)
 
+
 ## Implementing the Encoder
 class Encoder(Layer):
   def __init__(self, vocab_size, sequence_length, h, d_k, d_v, d_model, d_ff, n, rate, **kwargs):
@@ -272,7 +276,9 @@ class Encoder(Layer):
 
     return x
     
+    
 # Decoder
+
 
 ## Decoder Layer
 class DecoderLayer(Layer):
@@ -500,17 +506,14 @@ optimizer = Adam(LRScheduler(d_model), beta_1, beta_2, epsilon)
 
 # Prepare the training and test splits of the dataset
 dataset = PrepareDataset()
-trainX, trainY, train_orig, enc_seq_length, dec_seq_length, \
-    enc_vocab_size, dec_vocab_size = dataset('oe-eng.pkl')
+trainX, trainY, train_orig, enc_seq_length, dec_seq_length, enc_vocab_size, dec_vocab_size = dataset('oe-eng.pkl')
 
 # Prepare the dataset batches
 train_dataset = data.Dataset.from_tensor_slices((trainX, trainY))
 train_dataset = train_dataset.batch(batch_size)
 
 # Create model
-training_model = TransformerModel(enc_vocab_size, dec_vocab_size, enc_seq_length,
-                                  dec_seq_length, h, d_k, d_v, d_model, d_ff, n,
-                                  dropout_rate)
+training_model = TransformerModel(enc_vocab_size, dec_vocab_size, enc_seq_length, dec_seq_length, h, d_k, d_v, d_model, d_ff, n, dropout_rate)
 
 # Defining the loss function
 def loss_fcn(target, prediction):
@@ -587,12 +590,10 @@ for epoch in range(epochs):
         train_step(encoder_input, decoder_input, decoder_output)
 
         if step % 50 == 0:
-            print(f"Epoch {epoch+1} Step {step} Loss {train_loss.result():.4f} "
-                  + f"Accuracy {train_accuracy.result():.4f}")
+            print(f"Epoch {epoch+1} Step {step} Loss {train_loss.result():.4f} " + f"Accuracy {train_accuracy.result():.4f}")
 
     # Print epoch number and loss value at the end of every epoch
-    print(f"Epoch {epoch+1}: Training Loss {train_loss.result():.4f}, "
-          + f"Training Accuracy {train_accuracy.result():.4f}")
+    print(f"Epoch {epoch+1}: Training Loss {train_loss.result():.4f}, " + f"Training Accuracy {train_accuracy.result():.4f}")
 
     # Save a checkpoint after every five epochs
     if (epoch + 1) % 5 == 0:
