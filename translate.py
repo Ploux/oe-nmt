@@ -1,6 +1,7 @@
 # download the corpus
 
 !wget https://github.com/ploux/oe-nmt/raw/main/corpus.tsv
+!wget https://github.com/ploux/oe-nmt/raw/main/validate.tsv
 
 # imports
 
@@ -15,7 +16,7 @@ from numpy import argmax
 from numpy.random import rand
 from numpy.random import shuffle
 from tensorflow import keras
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from keras.utils.vis_utils import plot_model
 from keras.models import Sequential
 from keras.models import load_model
@@ -27,8 +28,11 @@ from keras.layers import TimeDistributed
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import LearningRateScheduler
 from keras.preprocessing.text import Tokenizer
-from keras.utils import pad_sequences
+from keras_preprocessing.sequence import pad_sequences
 from nltk.translate.bleu_score import corpus_bleu
+from tensorflow.keras.callbacks import EarlyStopping
+from matplotlib.pylab import plt
+
 
 # clean data
 
@@ -79,28 +83,29 @@ filename = 'corpus.tsv'
 doc = load_doc(filename)
 # print(doc)
 pairs = to_pairs(doc)
-clean_pairs = clean_pairs(pairs)
-save_clean_data(clean_pairs, 'me-oe.pkl')
+clean_pairs2 = clean_pairs(pairs)
+save_clean_data(clean_pairs2, 'oe-eng.pkl')
+
 
 # print out 20 sentence pairs
 for i in range(20):
-    print('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))
+    print('[%s] => [%s]' % (clean_pairs2[i,0], clean_pairs2[i,1]))
     
 # train on 90%, test on 10%
 
-dataset = load_clean_sentences('me-oe.pkl')
+dataset = load_clean_sentences('oe-eng.pkl')
 shuffle(dataset)
 pairs_length = len(pairs)
-ninety_percent = int(len(pairs)*.9)
-ten_percent = pairs_length-ninety_percent
+eighty_percent = int(len(pairs)*.8)
+twenty_percent = pairs_length-eighty_percent
 
-print(ninety_percent)
-print(ten_percent)
+print(eighty_percent)
+print(twenty_percent)
 
-train, test = dataset[:336], dataset[336:]
-save_clean_data(dataset, 'me-oe-both.pkl')
-save_clean_data(train, 'me-oe-train.pkl')
-save_clean_data(test, 'me-oe-test.pkl')
+train, test = dataset[:eighty_percent], dataset[twenty_percent:]
+save_clean_data(dataset, 'oe-eng-both.pkl')
+save_clean_data(train, 'oe-eng-train.pkl')
+save_clean_data(test, 'oe-eng-test.pkl')
 
 # tokenize - break down into indivdual words
 
@@ -141,9 +146,9 @@ def define_model(src_vocab, tar_vocab, src_timesteps, tar_timesteps, n_units):
     model.add(TimeDistributed(Dense(tar_vocab, activation='softmax')))
     return model
 
-dataset = load_clean_sentences('me-oe-both.pkl')
-train = load_clean_sentences('me-oe-train.pkl')
-test = load_clean_sentences('me-oe-test.pkl')
+dataset = load_clean_sentences('oe-eng-both.pkl')
+train = load_clean_sentences('oe-eng-train.pkl')
+test = load_clean_sentences('oe-eng-test.pkl')
 
 eng_tokenizer = create_tokenizer(dataset[:, 0])
 eng_vocab_size = len(eng_tokenizer.word_index) + 1
@@ -177,18 +182,28 @@ plot_model(model, to_file='model.png', show_shapes=True)
 model_filename = 'model.h5'
 checkpoint = ModelCheckpoint(model_filename, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 initial_learning_rate = 0.1
-epochs = 100
+epochs = 200
 decay = initial_learning_rate / epochs
+
 def lr_time_based_decay(epoch, lr):
     return lr * 1 / (1 + decay * epoch)
+
+early_stopping_monitor = EarlyStopping(monitor='loss',min_delta = 1e-3,patience=1)
+
 history_time_based_decay = model.fit(
     trainX, 
     trainY, 
-    epochs=200, 
+    epochs=epochs, 
     validation_data=(testX, testY),
     batch_size=64,
-    callbacks=[LearningRateScheduler(lr_time_based_decay, verbose=1), checkpoint],
+    callbacks=[early_stopping_monitor, LearningRateScheduler(lr_time_based_decay, verbose=1), checkpoint],
 )
+
+plt.plot(list(range(1,len(history_time_based_decay.history['loss'])+1)), history_time_based_decay.history['loss'], label='Training Loss')
+plt.savefig("Training Loss", dpi=300)
+plt.clf()
+plt.plot(list(range(1,len(history_time_based_decay.history['loss'])+1)), history_time_based_decay.history['val_loss'], label='Validation Loss')
+plt.savefig("Validation Loss", dpi=300)
 
 # evaluation
 
@@ -221,9 +236,17 @@ def evaluate_model(model, tokenizer, sources, raw_dataset):
         predicted.append(translation.split())
     print('BLEU-1: %f' % corpus_bleu(actual, predicted, weights=(1.0, 0, 0, 0)))
 
-dataset = load_clean_sentences('me-oe-both.pkl')
-train = load_clean_sentences('me-oe-train.pkl')
-test = load_clean_sentences('me-oe-test.pkl')
+
+filename = 'validate.tsv'
+doc = load_doc(filename)
+pairs = to_pairs(doc)
+clean_pairs2 = clean_pairs(pairs)
+save_clean_data(clean_pairs2, 'validate.pkl')
+
+dataset = load_clean_sentences('oe-eng-both.pkl')
+train = load_clean_sentences('oe-eng-train.pkl')
+test = load_clean_sentences('oe-eng-test.pkl')
+validate = load_clean_sentences('validate.pkl')
 
 eng_tokenizer = create_tokenizer(dataset[:, 0])
 eng_vocab_size = len(eng_tokenizer.word_index) + 1
@@ -235,12 +258,15 @@ oe_length = max_length(dataset[:, 1])
 
 trainX = encode_sequences(oe_tokenizer, oe_length, train[:, 1])
 testX = encode_sequences(oe_tokenizer, oe_length, test[:, 1])
+validateX = encode_sequences(oe_tokenizer, oe_length, validate[:, 1])
 
+#model = load_model('model.h5')
 
-model = load_model('model.h5')
-
-print('train')
+print('Train:')
 evaluate_model(model, eng_tokenizer, trainX, train)
 
-print('test')
-evaluate_model(model, eng_tokenizer, testX, test)    
+print('Test:')
+evaluate_model(model, eng_tokenizer, testX, test)
+
+print("Validate:")
+evaluate_model(model, eng_tokenizer, validateX, validate)
