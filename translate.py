@@ -1,7 +1,7 @@
 # download the corpus
 
-!wget https://github.com/ploux/oe-nmt/raw/main/corpus.tsv
-!wget https://github.com/ploux/oe-nmt/raw/main/validate.tsv
+# !wget https://github.com/ploux/oe-nmt/raw/main/corpus.tsv
+# !wget https://github.com/ploux/oe-nmt/raw/main/validate.tsv
 
 # imports
 
@@ -45,8 +45,6 @@ def load_doc(filename):
     return text
 
 def filterPair(p):
-    # print (p[0])
-    # print (p[1])
     return len(p[0].split(' ')) < MAX_LENGTH and len(p[1].split(' ')) < MAX_LENGTH
 
 
@@ -91,7 +89,7 @@ save_clean_data(clean_pairs2, 'oe-eng.pkl')
 for i in range(20):
     print('[%s] => [%s]' % (clean_pairs2[i,0], clean_pairs2[i,1]))
     
-# train on 90%, test on 10%
+# train on 80%, test on 20%
 
 dataset = load_clean_sentences('oe-eng.pkl')
 shuffle(dataset)
