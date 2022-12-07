@@ -258,6 +258,9 @@ def evaluate_model(model, tokenizer, sources, raw_dataset):
         actual.append([raw_target.split()])
         predicted.append(translation.split())
     print('BLEU-1: %f' % corpus_bleu(actual, predicted, weights=(1.0, 0, 0, 0)))
+    print('BLEU-2: %f' % corpus_bleu(actual, predicted, weights=(0.5, 0.5, 0, 0)))
+    print('BLEU-3: %f' % corpus_bleu(actual, predicted, weights=(0.3, 0.3, 0.3, 0)))
+    print('BLEU-4: %f' % corpus_bleu(actual, predicted, weights=(0.25, 0.25, 0.25, 0.25)))
 
 filename = 'validate.tsv'
 doc = load_doc(filename)
