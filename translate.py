@@ -79,7 +79,6 @@ def save_clean_data(sentences, filename):
 
 filename = 'corpus.tsv'
 doc = load_doc(filename)
-# print(doc)
 pairs = to_pairs(doc)
 clean_pairs2 = clean_pairs(pairs)
 save_clean_data(clean_pairs2, 'oe-eng.pkl')
