@@ -7,16 +7,11 @@ Old English was originally written in a runic alphabet, however the Anglo-Saxons
 Many Old English texts have been lost, and many of the surviving texts are fragmentary or badly damaged. These texts have been digitized and transcribed and are generally available in the public domain in their untranslated form. For many years Old English has been translated by hand. Peter, one of the authors, has a Masters of Fine Arts in Writing, and has taken graduate coursework in Old English. At the time (2011), the Old English manuscripts were printed in books. The translator would photocopy or type the original manuscript, look up each word individually, and write the definition or definitions above it. Then from this, the most likely interpretation of the sentence would be written in Modern English. Peter used this process to translate Beowulf, and although rewarding, it was labor-intensive and tedious. Today, online texts are available, as well as online dictionaries are available [oe translator], although the latter can only process one word at a time, requiring the translator to still be familiar with Old English grammar and syntax. As of 2022, Old English is not offered as a language option on sites such as Google Translate [google translate]. The Old English corpus includes religious texts, legal documents, histories, scientific texts, riddles, and poetry, most famously the epic poem Beowulf. Currently, only dedicated scholars are able to decipher these texts, and casual readers must either purchase professional translations, or rely on translations available online, which is incomplete, and of varying quality. 
 
 We propose a neural machine translation system to translate Old English into Modern English. This would have the benefit of bringing Old English to a much wider audience. As it is, the material which survives from this historical period is sparse. A large percentage of the United States population has at least one ancestor of English or Northern European stock, and this project is a step towards enabling them to unlock their cultural heritage and better understand the ideas, history, and lifestyles of their ancestors.
-
-
-
-
-
-
-
-
 # Related Work
 
+One of the few recent works concerning both machine learning and Old English is [large scale]. Although direct translation is not attempted, the authors use quantitative profiling to pconfirm the single authorship of Beowulf, as well as the attributing the authorship of several other poems to Cynewulf, two topics that have been debated by scholars for several hundred years.
+
+ 
 
 
 
@@ -36,11 +31,11 @@ a separate independent validation set is created for testing.
 
 # Contributions of Members
 
-
+Both members of the group worked equally on the code. Nitish developed the version with added attention layer, while Peter focused on the transformer version. Additionally Nitish is to be credited with standardizing the three programs, generating usable testing output, and implementing features such as the early stopping monitor. Peter, due to his prior familiarity with Old English, was responsible for expanding the dataset. Both group members also collaborated equally in terms of experimental design and analysis, writing this report, and preparing the presentation.
 
 # References
 
-building transformers book
+building transformers book] Building Transformer Models with Attention, Stefania Cristina, Mehreen Saeed, 2022, MachineLearningMastery.com
 
 [machine learning webpage](https://machinelearningmastery.com/develop-neural-machine-translation-system-keras/)
 
@@ -58,5 +53,6 @@ https://www.libraries.rutgers.edu/databases/dictionary-old-english-web-corpus [r
 
 oe translator https://www.oldenglishtranslator.co.uk/
 
+[large scale] Neidorf, L., Krieger, M. S., Yakubek, M., Chaudhuri, P., & Dexter, J. P. (2019). Large-scale quantitative profiling of the Old English verse tradition. Nature Human Behaviour. doi:10.1038/s41562-019-0570-1 
 # Code
 (codes and datasets should be open to the public, with separate files or GitHub repository)
