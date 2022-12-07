@@ -31,10 +31,6 @@ import string
 import pandas as pd
 from unicodedata import normalize
 
-# download the corpus
-
-!wget https://github.com/ploux/oe-nmt/raw/main/corpus.tsv
-
 # clean data
 
 MAX_LENGTH = 20 # max num of words in eng and oe sentences
@@ -86,7 +82,7 @@ save_clean_data(clean_pairs, 'oe-eng.pkl')
 # print out 20 sentence pairs
 for i in range(20):
     print('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))
-  
+    
     
 # Positional Embedding Layer
 class PositionEmbeddingFixedWeights(Layer):
