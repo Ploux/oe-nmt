@@ -1,7 +1,6 @@
 # download the corpus
 
 # !wget https://github.com/ploux/oe-nmt/raw/main/corpus.tsv
-# !wget https://github.com/ploux/oe-nmt/raw/main/validate.tsv
 
 
 # Imports
