@@ -42,23 +42,32 @@ This simplification led to inflated BLEU scores and facile results. A cursory in
 
 [figure - six]
 
-The above figure [six challenges] shows that 400,000 words is considered an absolute minimum. The expanded dataset contains only about 12,000.
+400,000 words is considered an absolute minimum for machine translation. The original dataset contains only 3,000. Our expanded dataset contains about 12,000. NMT begins to surpass SMT (Statistical Machine Translation) in performance at 15 million words. [six challenges]. While this information is from 2017, hence pre-Transformer models, it is clear that we are still sorely lacking in this department.
 
+Expanding the dataset was a somewhat challenging process. Due to the extremely long sentences of the Homilies, we needed to break them into smaller independent clauses. This had to be done one at a time, manually, by someone with at least a passing familiarity with the language. 
 
+Approximately 100 sentences of the new dataset are from a different source which also had side-by-side translation [oeinfo]. These sentences were chosen because they are in the public domain, and because they are from a variety of sources, including the Lord's Prayer to the Magna Carta, a text on the treatment of colds, and excerpts from the Anglo-Saxon Chronicle.
 
-
-though was simplified greatly. Due to the repet
 
 
 
 ## Preprocessing
+
+All three models use a similar preprocessing pipeline. The dataset begins in the format of Old English->tab->Modern English. Punctuation is removed, and all words are lowercased. The pickle API is then used to serialize the dataset. 
 ## Models
 1. The RNN model
 
+[figure]
+
 2. The RNN with attention model
+
+
+[figure]
    
 3. The transformer model
 
+
+[figure]
 ## Parameters, Epochs, Etc
 
 ## Evaluation Procedure
