@@ -19,7 +19,7 @@ A number of works deal with the preservation of endangered languages , for insta
 
 Our initial RNN model is based on an English-German translation model developed by Jason Brownlee [machine learning webpage]. This model was further adapted to Old English [github]. 
 
-The attention layer was added, following the guidance of [NITISH put your reference here] A helpful description of attention used in the presentation was found in [nmt]
+The attention layer was added, following the guidance of [attention] A helpful description of attention used in the presentation was found in [nmt]
 
 A number of github projects dealing the conjunction of NLP and Old English were discovered, in addition to the sources previously mentioned. These are [git1, git2, git3, git4, git5]
 
@@ -36,7 +36,7 @@ We propose to compare three different methods of neural machine translation of O
 ## Dataset
 We begin with a toy dataset of 385 sentence pairs, and expand it to over 1000 sentence pairs. The initial dataset came from the Homilies of Aelfric [homilies]. The Homilies are chosen because they are in the public domain, and feature side-by-side Modern and Old English versions. They also have a single translator, Benjamin Thorpe, and a similar subject matter (religion) which lends consistency. However, the initial dataset was heavily simplified. 
 
-[figure]
+[figure - old dataset]
 
 This simplification led to inflated BLEU scores and facile results. A cursory inspection of this dataset shows that using it for training will produce a model capable of translating sentences from the original dataset, but not much else, including other sentences from the Homilies. 
 
@@ -46,6 +46,8 @@ This simplification led to inflated BLEU scores and facile results. A cursory in
 
 Expanding the dataset was a somewhat challenging process. Due to the extremely long sentences of the Homilies, we needed to break them into smaller independent clauses. This had to be done one at a time, manually, by someone with at least a passing familiarity with the language. 
 
+[figure - new dataset]
+
 Approximately 100 sentences of the new dataset are from a different source which also had side-by-side translation [oeinfo]. These sentences were chosen because they are in the public domain, and because they are from a variety of sources, including the Lord's Prayer to the Magna Carta, a text on the treatment of colds, and excerpts from the Anglo-Saxon Chronicle.
 
 ## Preprocessing
@@ -53,19 +55,19 @@ Approximately 100 sentences of the new dataset are from a different source which
 All three models use a similar preprocessing pipeline. The dataset begins in the format of Old English->tab->Modern English. Punctuation is removed, and all words are lowercased. The pickle API is then used to serialize the dataset. 
 
 ## Models
-1. The RNN model
+1. RNN model
 
-[figure]
+[figure Plot-of-Model-Graph-for-NMT.png]
 
-2. The RNN with attention model
+2. RNN with attention model
 
-
-[figure]
+[figure attention]]
    
-3. The transformer model
+3. transformer model
 
+[transformer - encoding figure]
 
-[figure]
+[transformer - decoding figure]
 ## Parameters
 
 [NITISH throw this into a table]
@@ -93,10 +95,14 @@ Warmup steps = 4000
 
 ## Evaluation Procedure
 
+The primary evaluation for the models was BLEU-1 score [bleu], which simply counts the number of words in the predicted sentence that are also in the target sentence. BLEU-2, BLEU-3, and BLEU-4, which count the number of word pairs, triplets, and quadruplets, respectively, were also used. Finally, the translation output was manually inspected for quality. This manual inspection proved important as a model can achieve a relatively high BLEU-1 score by a variety of deceptive means. For example, if the dataset consists of only sentences with the following repetitive pattern, by guessing a translation of "it is" for every sentence, the model will achieve a BLEU-1 score of approximately 0.6.
+
+[figure - blue dataset] 
 
 
 # Results
 
+The three models were evaluated on the test set, which consisted of ____ sentences. Both the original and expanded datasets were used. The results are shown in the table below.
 
 
 # Conclusions
@@ -128,6 +134,7 @@ transformer - https://colab.research.google.com/drive/1g9SCvSoQmHn28Niiqz06n9a0M
 [git4] https://github.com/sharris-umass/oenouns
 [git5] https://github.com/old-english-learner-texts/old-english-texts
 
+[attention] https://www.analyticsvidhya.com/blog/2019/11/comprehensive-guide-attention-mechanism-deep-learning/
 
 [trivial] Trivial Transfer Learning for Low-Resource Neural Machine Translation
 Tom Kocmi
@@ -182,6 +189,7 @@ October 2022,
 
 [wikipedia] old english page 
 
+[bleu] https://en.wikipedia.org/wiki/BLEU
 [wiki lit] old english literature
 
 [revisiting] Revisiting Low-Resource Neural Machine Translation: A Case Study
