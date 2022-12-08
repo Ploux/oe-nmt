@@ -1,7 +1,6 @@
 # download the corpus
 
-# !wget https://github.com/ploux/oe-nmt/raw/main/corpus.tsv
-# !wget https://github.com/ploux/oe-nmt/raw/main/validate.tsv
+#!wget https://github.com/ploux/oe-nmt/raw/main/corpus.tsv
 
 # imports
 
@@ -45,6 +44,8 @@ def load_doc(filename):
     return text
 
 def filterPair(p):
+    # print (p[0])
+    # print (p[1])
     return len(p[0].split(' ')) < MAX_LENGTH and len(p[1].split(' ')) < MAX_LENGTH
 
 
@@ -79,6 +80,7 @@ def save_clean_data(sentences, filename):
 
 filename = 'corpus.tsv'
 doc = load_doc(filename)
+# print(doc)
 pairs = to_pairs(doc)
 clean_pairs2 = clean_pairs(pairs)
 save_clean_data(clean_pairs2, 'oe-eng.pkl')
@@ -88,7 +90,7 @@ save_clean_data(clean_pairs2, 'oe-eng.pkl')
 for i in range(20):
     print('[%s] => [%s]' % (clean_pairs2[i,0], clean_pairs2[i,1]))
     
-# train on 80%, test on 20%
+# train on 90%, test on 10%
 
 dataset = load_clean_sentences('oe-eng.pkl')
 shuffle(dataset)
@@ -199,7 +201,7 @@ history_time_based_decay = model.fit(
 plt.plot(list(range(1,len(history_time_based_decay.history['loss'])+1)), history_time_based_decay.history['loss'], label='Training Loss')
 plt.savefig("Training Loss", dpi=300)
 plt.clf()
-plt.plot(list(range(1,len(history_time_based_decay.history['loss'])+1)), history_time_based_decay.history['val_loss'], label='Validation Loss')
+plt.plot(list(range(1,len(history_time_based_decay.history['val_loss'])+1)), history_time_based_decay.history['val_loss'], label='Validation Loss')
 plt.savefig("Validation Loss", dpi=300)
 
 # evaluation
@@ -232,9 +234,9 @@ def evaluate_model(model, tokenizer, sources, raw_dataset):
         actual.append([raw_target.split()])
         predicted.append(translation.split())
     print('BLEU-1: %f' % corpus_bleu(actual, predicted, weights=(1.0, 0, 0, 0)))
-	print('BLEU-2: %f' % corpus_bleu(actual, predicted, weights=(0.5, 0.5, 0, 0)))
-	print('BLEU-3: %f' % corpus_bleu(actual, predicted, weights=(0.3, 0.3, 0.3, 0)))
-	print('BLEU-4: %f' % corpus_bleu(actual, predicted, weights=(0.25, 0.25, 0.25, 0.25)))
+    print('BLEU-2: %f' % corpus_bleu(actual, predicted, weights=(0.5, 0.5, 0, 0)))
+    print('BLEU-3: %f' % corpus_bleu(actual, predicted, weights=(0.3, 0.3, 0.3, 0)))
+    print('BLEU-4: %f' % corpus_bleu(actual, predicted, weights=(0.25, 0.25, 0.25, 0.25)))
 
 
 filename = 'validate.tsv'
@@ -262,11 +264,5 @@ validateX = encode_sequences(oe_tokenizer, oe_length, validate[:, 1])
 
 #model = load_model('model.h5')
 
-print('Train:')
-evaluate_model(model, eng_tokenizer, trainX, train)
-
-print('Test:')
-evaluate_model(model, eng_tokenizer, testX, test)
-
-print("Validate:")
+print('Validation:')
 evaluate_model(model, eng_tokenizer, validateX, validate)

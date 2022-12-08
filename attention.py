@@ -225,7 +225,7 @@ history_time_based_decay = model.fit(
 plt.plot(list(range(1,len(history_time_based_decay.history['loss'])+1)), history_time_based_decay.history['loss'], label='Training Loss')
 plt.savefig("Training Loss", dpi=300)
 plt.clf()
-plt.plot(list(range(1,len(history_time_based_decay.history['loss'])+1)), history_time_based_decay.history['val_loss'], label='Validation Loss')
+plt.plot(list(range(1,len(history_time_based_decay.history['val_loss'])+1)), history_time_based_decay.history['val_loss'], label='Validation Loss')
 plt.savefig("Validation Loss", dpi=300)
 
 # evaluation
@@ -287,11 +287,5 @@ validateX = encode_sequences(oe_tokenizer, oe_length, validate[:, 1])
 
 #model = load_model('model.h5')
 
-print('Train:')
-evaluate_model(model, eng_tokenizer, trainX, train)
-
-print('Test:')
-evaluate_model(model, eng_tokenizer, testX, test)
-
-print("Validate:")
+print('Validation:')
 evaluate_model(model, eng_tokenizer, validateX, validate)

@@ -30,6 +30,10 @@ import re
 import string
 import pandas as pd
 from unicodedata import normalize
+from tensorflow import Module
+from tensorflow import convert_to_tensor, int64, TensorArray, argmax, newaxis, transpose
+from nltk.translate.bleu_score import corpus_bleu
+
 
 # clean data
 
@@ -48,7 +52,7 @@ def to_pairs(doc):
   lines=doc.strip().split('\n')
   pairs=[line.split('\t') for line in lines]
   pairs = [pair for pair in pairs if filterPair(pair)]
-  pairs = [list(reversed((p))) for p in pairs]
+  #pairs = [list(reversed((p))) for p in pairs]
   return pairs
 
 def clean_pairs(lines):
@@ -412,7 +416,7 @@ class PrepareDataset:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.n_sentences = 10000  # Number of sentences to include in the dataset
-        self.train_split = 0.9  # Ratio of the training data split
+        self.train_split = 0.8  # Ratio of the training data split
 
     # Fit a tokenizer
     def create_tokenizer(self, dataset):
@@ -420,6 +424,10 @@ class PrepareDataset:
         tokenizer.fit_on_texts(dataset)
 
         return tokenizer
+    
+    def save_tokenizer(self, tokenizer, name):
+      with open(name + '_tokenizer.pkl', 'wb') as handle:
+        dump(tokenizer, handle, protocol=HIGHEST_PROTOCOL)
 
     def find_seq_length(self, dataset):
         return max(len(seq.split()) for seq in dataset)
@@ -467,6 +475,12 @@ class PrepareDataset:
         trainY = pad_sequences(trainY, maxlen=dec_seq_length, padding='post')
         trainY = convert_to_tensor(trainY, dtype=int64)
 
+        # Save the encoder tokenizer
+        self.save_tokenizer(enc_tokenizer, 'enc')
+
+        # Save the decoder tokenizer
+        self.save_tokenizer(dec_tokenizer, 'dec')
+
         return (trainX, trainY, train, enc_seq_length, dec_seq_length, enc_vocab_size, dec_vocab_size)
 
 
@@ -481,7 +495,7 @@ d_ff = 2048  # Dimensionality of the inner fully connected layer
 n = 6  # Number of layers in the encoder stack
 
 # Define the training parameters
-epochs = 100
+epochs = 200
 batch_size = 64
 beta_1 = 0.9
 beta_2 = 0.98
@@ -574,7 +588,12 @@ def train_step(encoder_input, decoder_input, decoder_output):
 
     train_loss(loss)
     train_accuracy(accuracy)
-    
+
+
+
+trainingLoss = []
+trainingAccuracy = []
+
 start_time = time()
 for epoch in range(epochs):
     train_loss.reset_states()
@@ -590,16 +609,127 @@ for epoch in range(epochs):
         decoder_output = train_batchY[:, 1:]
 
         train_step(encoder_input, decoder_input, decoder_output)
-
+  
         if step % 50 == 0:
             print(f"Epoch {epoch+1} Step {step} Loss {train_loss.result():.4f} " + f"Accuracy {train_accuracy.result():.4f}")
 
+
     # Print epoch number and loss value at the end of every epoch
     print(f"Epoch {epoch+1}: Training Loss {train_loss.result():.4f}, " + f"Training Accuracy {train_accuracy.result():.4f}")
+
+    trainingLoss.append(float(train_loss.result()))
+    trainingAccuracy.append(float(train_accuracy.result()))
+    if epoch > 3:
+      if trainingLoss[epoch-1] - trainingLoss[epoch] < 0.0005:
+        break
 
     # Save a checkpoint after every five epochs
     if (epoch + 1) % 5 == 0:
         save_path = ckpt_manager.save()
         print(f"Saved checkpoint at epoch {epoch+1}")
 
+  
 print("Total time taken: %.2fs" % (time() - start_time))
+
+plt.plot(list(range(1,len(trainingLoss)+1)), trainingLoss, label='Training Loss')
+plt.savefig("Training Loss", dpi=300)
+plt.clf()
+plt.plot(list(range(1,len(trainingAccuracy)+1)), trainingAccuracy, label='Accuracy')
+plt.savefig("Accuracy", dpi=300)
+
+
+class Translate(Module):
+    def __init__(self, inferencing_model, **kwargs):
+        super().__init__(**kwargs)
+        self.transformer = inferencing_model
+
+    def load_tokenizer(self, name):
+        with open(name, 'rb') as handle:
+            return load(handle)
+
+    def __call__(self, sentence):
+        # Append start and end of string tokens to the input sentence
+        sentence = "<START> " + sentence + " <EOS>"
+
+        # Load encoder and decoder tokenizers
+        enc_tokenizer = self.load_tokenizer('enc_tokenizer.pkl')
+        dec_tokenizer = self.load_tokenizer('dec_tokenizer.pkl')
+
+        # Prepare the input sentence by tokenizing, padding and converting to tensor
+        encoder_input = enc_tokenizer.texts_to_sequences(sentence)
+        encoder_input = pad_sequences(encoder_input,
+                                      maxlen=enc_seq_length, padding='post')
+        encoder_input = convert_to_tensor(encoder_input, dtype=int64)
+
+        # Prepare the output <START> token by tokenizing, and converting to tensor
+        output_start = dec_tokenizer.texts_to_sequences(["<START>"])
+        output_start = convert_to_tensor(output_start[0], dtype=int64)
+
+        # Prepare the output <EOS> token by tokenizing, and converting to tensor
+        output_end = dec_tokenizer.texts_to_sequences(["<EOS>"])
+        output_end = convert_to_tensor(output_end[0], dtype=int64)
+
+        # Prepare the output array of dynamic size
+        decoder_output = TensorArray(dtype=int64, size=0, dynamic_size=True)
+        decoder_output = decoder_output.write(0, output_start)
+
+        for i in range(dec_seq_length):
+            # Predict an output token
+            prediction = self.transformer(encoder_input,transpose(decoder_output.stack()),
+                                          training=False)
+            prediction = prediction[:, -1, :]
+
+            # Select the prediction with the highest score
+            predicted_id = argmax(prediction, axis=-1)
+            predicted_id = predicted_id[0][newaxis]
+
+            # Write the selected prediction to the output array at the next
+            # available index
+            decoder_output = decoder_output.write(i + 1, predicted_id)
+
+            # Break if an <EOS> token is predicted
+            if predicted_id == output_end:
+                break
+
+        output = transpose(decoder_output.stack())[0]
+        output = output.numpy()
+
+        output_str = []
+
+        # Decode the predicted tokens into an output string
+        for i in range(output.shape[0]):
+            key = output[i]
+            output_str.append(dec_tokenizer.index_word[key])
+
+        return output_str
+
+
+translator = Translate(training_model)
+
+print(translator("Ic wearð asend"))
+
+
+
+with open("OldEnglish.txt", encoding="utf8") as file:
+    oldEnglish = [line.rstrip() for line in file]
+
+with open("English.txt", encoding="utf8") as file:
+    english = [line.rstrip() for line in file]
+
+translations = [];
+
+i = 0;
+for sentence in oldEnglish:
+  temp = translator(sentence)
+  temp = temp[1:-1]
+  #print(temp)
+  t = " ".join(temp)
+  print(t)
+  translations.append(t)  
+  
+
+
+print('BLEU-1: %f' % corpus_bleu(english, translations, weights=(1.0, 0, 0, 0)))
+print('BLEU-2: %f' % corpus_bleu(english, translations, weights=(0.5, 0.5, 0, 0)))
+print('BLEU-3: %f' % corpus_bleu(english, translations, weights=(0.3, 0.3, 0.3, 0)))
+print('BLEU-4: %f' % corpus_bleu(english, translations, weights=(0.25, 0.25, 0.25, 0.25)))
