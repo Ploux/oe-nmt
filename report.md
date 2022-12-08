@@ -48,12 +48,10 @@ Expanding the dataset was a somewhat challenging process. Due to the extremely l
 
 Approximately 100 sentences of the new dataset are from a different source which also had side-by-side translation [oeinfo]. These sentences were chosen because they are in the public domain, and because they are from a variety of sources, including the Lord's Prayer to the Magna Carta, a text on the treatment of colds, and excerpts from the Anglo-Saxon Chronicle.
 
-
-
-
 ## Preprocessing
 
 All three models use a similar preprocessing pipeline. The dataset begins in the format of Old English->tab->Modern English. Punctuation is removed, and all words are lowercased. The pickle API is then used to serialize the dataset. 
+
 ## Models
 1. The RNN model
 
@@ -68,7 +66,30 @@ All three models use a similar preprocessing pipeline. The dataset begins in the
 
 
 [figure]
-## Parameters, Epochs, Etc
+## Parameters
+
+[NITISH throw this into a table]
+
+All models: 
+optimizer - Adam
+loss    - categorical crossentropy
+initial learning rate - 0.1
+epochs - 200 (with early stopping)
+batch size - 64
+
+Transformer model
+Number of self-attention heads = 8
+Dimensionality of the linearly projected queries and keys = 64
+Dimensionality of the linearly projected values = 64
+Dimensionality of model layers' outputs = 512
+Dimensionality of the inner fully connected layer = 2048
+Number of layers in the encoder stack = 6
+Beta_1 = 0.9
+Beta_2 = 0.98
+Epsilon = 10^-9
+Dropout rate = 0.1
+Warmup steps = 4000
+
 
 ## Evaluation Procedure
 
