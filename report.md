@@ -34,7 +34,22 @@ Of course, this section would not be complete without mention of the original tr
 We propose to compare three different methods of neural machine translation of Old English into Modern English. The first model uses an RNN (Recurrent Neural Network). The second model is similar, with the addition of an attention layer. The third model is a transformer. 
 
 ## Dataset
-We begin with a toy dataset of 385 sentence pairs, and expand it to 1000 sentence pairs. The initial dataset came from the Homilies of Aelfric [homilies]. This dataset has several
+We begin with a toy dataset of 385 sentence pairs, and expand it to over 1000 sentence pairs. The initial dataset came from the Homilies of Aelfric [homilies]. The Homilies are chosen because they are in the public domain, and feature side-by-side Modern and Old English versions. They also have a single translator, Benjamin Thorpe, and a similar subject matter (religion) which lends consistency. However, the initial dataset was heavily simplified. 
+
+[figure]
+
+This simplification led to inflated BLEU scores and facile results. A cursory inspection of this dataset shows that using it for training will produce a model capable of translating sentences from the original dataset, but not much else, including other sentences from the Homilies. 
+
+[figure - six]
+
+The above figure [six challenges] shows that 400,000 words is considered an absolute minimum. The expanded dataset contains only about 12,000.
+
+
+
+
+though was simplified greatly. Due to the repet
+
+
 
 ## Preprocessing
 ## Models
@@ -66,8 +81,13 @@ Both members of the group worked equally on the code. Nitish developed the versi
 
 # Code
 
-The code for this project is available at https://github.com/Ploux/oe-nmt. Three 
+The code for this project is available at https://github.com/Ploux/oe-nmt. The three NMT models are named translate.py, attention.py, and transformer.py. They require the corpus dataset, corpus.tsv in order to run. Additionally, the models are accessible at the following colab links, in which case the corpus will be automatically downloaded. A GPU runtime is recommended.
 
+translate - (https://colab.research.google.com/drive/1SYTCc2L1kXTizm-SaeHoSbuC4t8x_9OD?usp=sharing)
+
+attention - (https://colab.research.google.com/drive/162H4r-QJFdkRN6kPWlGpB48nl9VTTasB?usp=sharing)
+
+transformer - https://colab.research.google.com/drive/1g9SCvSoQmHn28Niiqz06n9a0MJRs6jpa?usp=sharing
 
 
 # References
